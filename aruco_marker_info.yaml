@@ -1,0 +1,28 @@
+# Be careful with length_mm values. Stickers and printouts can vary
+# significantly from your expectations. You should measure them
+# directly. For example, in a prototype robot the stickers were closer
+# to 23mm wide than 24mm. This 1mm difference resulted in > 1cm of
+# error in the depths for the marker pose estimates when only using
+# RGB images.
+
+
+'200':
+  length_mm: 14
+  use_rgb_only: True
+  name: 'finger_left'
+  link: 'link_finger_left'
+'201':
+  length_mm: 14
+  use_rgb_only: True
+  name: 'finger_right'
+  link: 'link_finger_right'
+'202':
+  length_mm: 30
+  use_rgb_only: True
+  name: 'toy'
+  link: 'None'
+'default':
+  length_mm: 24
+  use_rgb_only: False
+  name: 'unknown'
+  link: 'None'
