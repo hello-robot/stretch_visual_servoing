@@ -52,16 +52,24 @@ You should now see a display that shows RGB video from the D405 camera. When you
 ![](/gifs/tennis_ball_stretch_view.gif)
 
 
+The tennis ball demo uses [YOLOv8 from Ultralytics](https://github.com/ultralytics/ultralytics). Prior to proceeding, you should run the following installation shell script.
 
-### YOLOv8 on the Robot
+```
+cd ./stretch_visual_servoing
+./install_yolov8.sh
+```
 
-Home your robot, if you haven't already. 
+Now, home your robot, if you haven't already. 
 
 ```
 stretch_robot_home.py
 ```
 
-Now, go to the repository's directory and start the D405 image server
+### YOLOv8 on the Robot
+
+First, you should try running a small YOLOv8 model on the robot. 
+
+Go to the repository's directory and start the D405 image server
 
 ```
 cd ./stretch_visual_servoing
