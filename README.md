@@ -10,7 +10,7 @@ Visual servoing is a powerful way to achieve fast, precise, and robust motions u
 
 
 
-![](reach_for_aruco_marker_cube.gif)
+![](/gifs/reach_for_aruco_marker_cube.gif)
 
 
 
@@ -45,11 +45,11 @@ You should now see a display that shows RGB video from the D405 camera. When you
 
 
 
-![](tennis_ball.gif)
+![](/gifs/tennis_ball.gif)
 
 
 
-![](tennis_ball_stretch_view.gif)
+![](/gifs/tennis_ball_stretch_view.gif)
 
 
 
@@ -77,7 +77,7 @@ cd ./stretch_visual_servoing
 python3 recv_and_yolo_d405_images.py
 ```
 
-After the code has downloaded the YOLOv8 model and begins running, you should see the result of processing in a video display on the robot. It should look similar to the GIF included in this documentation. You should see a visualization of the fingertip frames of reference. When you hold up a tennis ball for the robot, you should see it segmented. It should be running with an average frame rate of 13 Hz to 15 Hz.
+After the code has downloaded the YOLOv8 model and begins running, you should see the result of processing in a video display on the robot. It should look similar to the GIF above. You should see a visualization of the fingertip frames of reference. When you hold up a tennis ball for the robot, you should see it segmented. It should be running with an average frame rate of 13 Hz to 15 Hz.
 
 Now, you can begin the visual servoing process using the following code.
 
@@ -110,7 +110,7 @@ cd ./stretch_visual_servoing
 python3 recv_and_yolo_d405_images.py -r
 ```
 
-After the code has downloaded the YOLOv8 model and begins running, you should see the result of processing in a video display on the external computer. It should look similar to the GIF included in this documentation. You should see a visualization of the fingertip frames of reference. When you hold up a tennis ball for the robot, you should see it segmented.
+After the code has downloaded the YOLOv8 model and begins running, you should see the result of processing in a video display on the external computer. It should look similar to the GIF above. You should see a visualization of the fingertip frames of reference. When you hold up a tennis ball for the robot, you should see it segmented.
 
 Now, go back to the robot and run the following code.
 
