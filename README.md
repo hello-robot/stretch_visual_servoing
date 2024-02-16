@@ -33,7 +33,7 @@ stretch_robot_home.py
 Now, go to the home directory of the cloned repository and run the demo code.
 
 ```
-cd ./stretch_gripper_camera_demos
+cd ./stretch_visual_servoing
 python3 visual_servoing_demo.py
 ```
 
