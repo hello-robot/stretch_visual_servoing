@@ -315,7 +315,7 @@ def recenter_robot(controller):
             controller.set_command(nvc.zero_vel)
     controller.reset_base_odometry()
 
-def main(use_yolo, use_remote_computer):
+def main(use_yolo, use_remote_computer, exposure):
 
     if not use_yolo: 
         marker_info = {}
@@ -324,7 +324,6 @@ def main(use_yolo, use_remote_computer):
             
         detect_ball_on = False
         detect_aruco_toy_on = True
-        use_low_exposure = True
         aruco_detector = ad.ArucoDetector(marker_info=marker_info, show_debug_images=True, use_apriltag_refinement=False, brighten_images=True)
         aruco_to_fingertips = af.ArucoToFingertips(default_height_above_mounting_surface=af.suctioncup_height['cup_bottom'])
     else:
@@ -375,10 +374,6 @@ def main(use_yolo, use_remote_computer):
         recenter_robot(controller)
 
         if not use_yolo:
-            if use_low_exposure:
-                exposure = 'low'
-            else:
-                exposure = 'auto'
             pipeline, profile = dh.start_d405(exposure)
 
         frames_since_toy_detected = 0
@@ -779,8 +774,16 @@ if __name__ == '__main__':
 
     parser.add_argument('-r', '--remote', action='store_true', help = 'Use this argument when allowing a remote computer to send task-relevant information for visual servoing, such as 3D positions for the fingertips and target objects. Prior to using this option, configure the network with the file yolo_networking.py.')
 
+    parser.add_argument('-e', '--exposure', action='store', type=str, default='low', help=f'Set the D405 exposure to {dh.exposure_keywords} or an integer in the range {dh.exposure_range}') 
+            
+    
     args = parser.parse_args()
     use_yolo = args.yolo
     use_remote_computer = args.remote
-    main(use_yolo, use_remote_computer)
+
+    exposure = args.exposure
+
+    if not dh.exposure_argument_is_valid(exposure):
+        raise argparse.ArgumentTypeError(f'The provided exposure setting, {exposure}, is not a valide keyword, {dh.exposure_keywords}, or is outside of the allowed numeric range, {dh.exposure_range}.')    
     
+    main(use_yolo, use_remote_computer, exposure)
