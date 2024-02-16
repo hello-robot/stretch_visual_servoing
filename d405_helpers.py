@@ -3,19 +3,51 @@ import numpy as np
 import cv2
 from d405_helpers_without_pyrealsense import *
 
-def check_exposure(value):
-    int_value = int(value)
-    if (int_value < 0) or (int_value > 500000):
-        raise argparse.ArgumentTypeError('The provided exposure setting, %s, is outside of the allowed range [0, 500000].' % value)
-    return int_value
-        
+exposure_keywords = ['low', 'medium', 'auto']
+exposure_range = [0, 500000]
 
+def exposure_argument_is_valid(value):
+    if value in exposure_keywords:
+        return True
+    is_string = isinstance(value, str)
+    is_int = isinstance(value, int)
+    int_value = exposure_range[0] - 10
+    if is_string:
+        if not value.isdigit():
+            return False
+        else:
+            int_value = int(value)
+    elif is_int:
+        int_value = value
+    if (int_value >= exposure_range[0]) or (int_value <= exposure_range[1]):
+        return True
+    return False
+
+def check_exposure_value(value):
+    if not exposure_argument_is_valid(value):
+        raise ValueError(f'The provided exposure setting, {value}, is not a valide keyword, {exposure_keywords}, or is outside of the allowed numeric range, {exposure_range}.')    
+
+def prepare_exposure_value(value):
+    check_exposure_value(value)
+    if value in exposure_keywords:
+        return value
+    is_int = isinstance(value, int)
+    if is_int:
+        return value
+    is_string = isinstance(value, str)
+    if is_string:
+        return int(value)
+    return None
+
+    
 def start_d405(exposure): 
     camera_info = [{'name': device.get_info(rs.camera_info.name),
                     'serial_number': device.get_info(rs.camera_info.serial_number)}
                    for device
                    in rs.context().devices]
 
+    exposure = prepare_exposure_value(exposure)
+    
     print('All cameras that were found:')
     print(camera_info)
     print()
@@ -49,10 +81,6 @@ def start_d405(exposure):
     config.enable_stream(rs.stream.color, width, height, rs.format.bgr8, fps)
 
     profile = pipeline.start(config)
-    
-    # Check the exposure argument
-    if exposure not in ['low', 'medium', 'auto']:
-        check_exposure(exposure)
     
     if exposure == 'auto':
         # Use autoexposre

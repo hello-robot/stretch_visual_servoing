@@ -117,46 +117,21 @@ def main(use_remote_computer, exposure):
 
 if __name__ == '__main__':
 
+
     parser = argparse.ArgumentParser(
         prog='Send D405 Images',
         description='Send D405 images to local and remote processes.'
     )
-    parser.add_argument('-r', '--remote', action='store_true', help = 'Use this argument when allowing a remote computer to receive D405 images. Prior to using this option, configure the network with the file yolo_networking.py on the robot and the remote computer.')
-    
-    parser.add_argument('-a', '--auto', action='store_true', help = 'Use auto exposure for the D405. This can result in greater motion blur due to longer integration time. The default is for auto exposure to be disabled.')
-    parser.add_argument('-l', '--low', action='store_true', help = 'Use a low exposure setting for the D405. This can reduce motion blur.')
-    parser.add_argument('-m', '--medium', action='store_true', help = 'Use a medium exposure setting for the D405. This can reduce motion blur compared to auto exposure.')
-    parser.add_argument('-e', '--exposure', type=dh.check_exposure,  default=None, help = 'Provide a custom exposure setting for the D405. 330000 is the default setting.')
-        
+    parser.add_argument('-r', '--remote', action='store_true', help='Use this argument when allowing a remote computer to receive D405 images. Prior to using this option, configure the network with the file forcesight_networking.py on the robot and the remote computer.')
+    parser.add_argument('-e', '--exposure', action='store', type=str, default='low', help=f'Set the D405 exposure to {dh.exposure_keywords} or an integer in the range {dh.exposure_range}') 
+            
     args = parser.parse_args()
 
     use_remote_computer = args.remote
-    
-    exposure_value = args.exposure
-    low_exposure = args.low
-    medium_exposure = args.medium
-    auto_exposure = args.auto
+    exposure = args.exposure
 
-    exposure_command_count = 0
-
-    exposure = 'medium'
-    
-    if exposure_value is not None:
-        exposure_command_count = exposure_command_count + 1
-        exposure = exposure_value
-    if low_exposure:
-        exposure_command_count = exposure_command_count + 1
-        exposure = 'low'
-    if medium_exposure:
-        exposure_command_count = exposure_command_count + 1
-        exposure = 'medium'
-    if auto_exposure:
-        exposure_command_count = exposure_command_count + 1
-        exposure = 'auto'
-    
-    if exposure_command_count > 1: 
-        raise argparse.ArgumentTypeError('Only a single exposure argument can be provided, but you provided ' + str(exposure_command_count) + ' exposure arguments.')
-
-    
+    if not dh.exposure_argument_is_valid(exposure):
+        raise argparse.ArgumentTypeError(f'The provided exposure setting, {exposure}, is not a valide keyword, {dh.exposure_keywords}, or is outside of the allowed numeric range, {dh.exposure_range}.')    
+            
     main(use_remote_computer, exposure)
     
