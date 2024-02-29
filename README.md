@@ -128,5 +128,18 @@ cd ./stretch_gripper_camera_demos
 python3 visual_servoing_demo.py -y -r
 ```
 
+## Troubleshooting
 
+If you're having trouble with the steps in the guide, please check the following tips:
 
+### There's jitter in the fingertip tracking
+
+![jitter comparison gif](./gifs/jitter_comparison2.gif)
+
+This gif shows what's normal vs. what's an unusual amount of jitter. If you're seeing jitter like on the right, try changing the exposure of the camera. This can improve detection of the finger ArUco markers, which improves tracking of the fingertips.
+
+```
+python3 visual_servoing_demo.py --exposure ['low', 'medium', 'auto'] or an integer in range [0, 500000]
+```
+
+The `--exposure` flag also works on the `send_d405_images.py` script.
