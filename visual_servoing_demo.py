@@ -776,6 +776,7 @@ def main(use_yolo, use_remote_computer, exposure):
             loop_timer.pretty_print()
     finally:
         controller.stop()
+        robot.stop()
         pipeline.stop()
 
 
