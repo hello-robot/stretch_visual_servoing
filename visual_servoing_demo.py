@@ -15,6 +15,8 @@ import argparse
 import zmq
 import loop_timer as lt
 import yolo_networking as yn
+from stretch_body import robot_params
+from stretch_body import hello_utils as hu
 
 def draw_origin(image, camera_info, origin_xyz, color):
     radius = 6
@@ -37,6 +39,22 @@ def draw_text(image, origin, text_lines):
         cv2.putText(image, line, location + offset, font, font_size, (0, 0, 0), 4, cv2.LINE_AA)
         cv2.putText(image, line, location + offset, font, font_size, (255, 255, 255), 1, cv2.LINE_AA)
 
+def get_dxl_joint_limits(joint):
+    # method to get dynamixel joint limits in radians from robot params
+    # Refer https://github.com/hello-robot/stretch_body/blob/master/body/stretch_body/dynamixel_hello_XL430.py#L1196:L1199
+
+    range_t = robot_params.RobotParams().get_params()[1][joint]['range_t']
+    flip_encoder_polarity = robot_params.RobotParams().get_params()[1][joint]['flip_encoder_polarity']
+    gr = robot_params.RobotParams().get_params()[1][joint]['gr']
+    zero_t = robot_params.RobotParams().get_params()[1][joint]['zero_t']
+
+    polarity = -1.0 if flip_encoder_polarity else 1.0
+    range_rad = []
+    for t in range_t:
+        x = t - zero_t
+        rad_world = polarity*hu.deg_to_rad((360.0 * x / 4096.0))/gr
+        range_rad.append(rad_world)
+    return range_rad
     
 ####################################
 # Miscellaneous Parameters
@@ -163,7 +181,7 @@ max_joint_state = {
     'wrist_yaw_pos': 1.0, #0.5
     'wrist_pitch_pos': 0.2, #-0.4
     'wrist_roll_pos': 0.1,
-    'gripper_pos': 10.46
+    'gripper_pos': get_dxl_joint_limits('stretch_gripper')[1] #10.46
     }
 
 
