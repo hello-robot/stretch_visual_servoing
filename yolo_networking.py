@@ -1,7 +1,9 @@
 
 # Set these values for your network
-robot_ip = 'stretch-se3-####'
-remote_computer_ip = 'MACHINE_NAME_HERE'
+#robot_ip = 'stretch-se3-####'
+#remote_computer_ip = 'MACHINE_NAME_HERE'
+robot_ip = '192.168.1.15'
+remote_computer_ip = '192.168.1.10'
 
 # Set these to your preferred port numbers
 # hello d405 => 4ello d405 => 4405
