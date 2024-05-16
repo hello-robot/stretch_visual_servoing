@@ -309,7 +309,7 @@ def recenter_robot(controller):
     centered = False
     overall_velocity_scale = 1.0
     wait_time = 0.05
-    low_enough_total_abs_error = 2.5 #0.5 0.15
+    low_enough_total_abs_error = 3.0 #2.5 #0.5 0.15
   
     while not centered:
         joint_state = controller.get_joint_state()
