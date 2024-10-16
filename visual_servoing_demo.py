@@ -60,6 +60,7 @@ def get_dxl_joint_limits(joint):
 # Miscellaneous Parameters
 
 motion_on = True
+print_timing = True
 
 stop_if_toy_not_detected_this_many_frames = 10 #4 #1
 stop_if_fingers_not_detected_this_many_frames = 10 #4 #1
@@ -108,8 +109,8 @@ lost_ball_target_error_too_large = 0.10
 lost_ball_fingertips_too_close = 0.038
 
 successful_grasp_effort = -14.0
-successful_grasp_max_fingertip_distance = 0.075
-successful_grasp_min_fingertip_distance = 0.05 #0.03
+successful_grasp_max_fingertip_distance = 0.085 #0.075 m
+successful_grasp_min_fingertip_distance = 0.05 #0.03 m
 
 # Approximation based on just_touching key statefrom gripper characterization
 default_between_fingertips = np.array([0.01, 0.035, 0.17])
@@ -773,7 +774,8 @@ def main(use_yolo, use_remote_computer, exposure):
             cv2.waitKey(1)
 
             loop_timer.end_of_iteration()
-            loop_timer.pretty_print()
+            if print_timing: 
+                loop_timer.pretty_print()
     finally:
         controller.stop()
         robot.stop()
