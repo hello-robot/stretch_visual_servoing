@@ -304,67 +304,71 @@ class RegulatePollTimeout:
             print('--------------------------------------------------')
         return timeout_for_socket_poll_ms_int
 
-        
 
-def recenter_robot(controller):
-    centered = False
-    overall_velocity_scale = 1.0
-    wait_time = 0.05
-    low_enough_total_abs_error = 3.0 #2.5 #0.5 0.15
-  
-    while not centered:
-        joint_state = controller.get_joint_state()
-        #print('joint_state =', joint_state)
-        joint_errors = {k: (v - joint_state[k]) for (k,v) in joint_state_center.items()}
-        #print('joint_errors =', joint_errors)
-        total_abs_error = sum([abs(v) for v in joint_errors.values()])
+def recenter_robot(robot):
+    pan = np.pi/2.0
+    tilt = -np.pi/2.0
+    robot.head.move_to('head_pan', pan)
+    robot.head.move_to('head_tilt', tilt)
+    robot.push_command()
+    robot.wait_command()
+
+    robot.end_of_arm.get_joint('wrist_yaw').move_to(joint_state_center['wrist_yaw_pos'])
+    robot.end_of_arm.get_joint('wrist_pitch').move_to(joint_state_center['wrist_pitch_pos'])
+    robot.push_command()
+    robot.wait_command()
+
+    robot.arm.move_to(joint_state_center['arm_pos'])
+    robot.push_command()
+    robot.wait_command()
+
+    robot.lift.move_to(joint_state_center['lift_pos'])
+    robot.push_command()
+    robot.wait_command()
+
+    robot.end_of_arm.get_joint('stretch_gripper').move_to(joint_state_center['gripper_pos'])
+    robot.push_command()
+    robot.wait_command()
         
-        #print('total_abs_error = ', total_abs_error)
-        if total_abs_error > low_enough_total_abs_error:
-            joint_velocity = {k: overall_velocity_scale * v for (k,v) in joint_errors.items()}
-            joint_velocity_cmd = {pos_to_vel_cmd[k]: v for (k,v) in joint_velocity.items()}
-            cmd = {k: recenter_velocity_scale[k] * v for (k,v) in joint_velocity_cmd.items()}
-            #print('joint_velocity_cmd =', joint_velocity_cmd)
-            cmd = { k: ( 0.0 if ((v < 0.0) and (joint_state[vel_cmd_to_pos[k]] < min_joint_state[vel_cmd_to_pos[k]])) else v ) for (k,v) in cmd.items()}
-            cmd = { k: ( 0.0 if ((v > 0.0) and (joint_state[vel_cmd_to_pos[k]] > max_joint_state[vel_cmd_to_pos[k]])) else v ) for (k,v) in cmd.items()}
-            controller.set_command(cmd)
-            time.sleep(wait_time)
-        else:
-            centered = True
-            controller.set_command(nvc.zero_vel)
-    controller.reset_base_odometry()
 
 def main(use_yolo, use_remote_computer, exposure):
-
-    if not use_yolo: 
-        marker_info = {}
-        with open('aruco_marker_info.yaml') as f:
-            marker_info = yaml.load(f, Loader=SafeLoader)
-            
-        detect_ball_on = False
-        detect_aruco_toy_on = True
-        aruco_detector = ad.ArucoDetector(marker_info=marker_info, show_debug_images=True, use_apriltag_refinement=False, brighten_images=True)
-        aruco_to_fingertips = af.ArucoToFingertips(default_height_above_mounting_surface=af.suctioncup_height['cup_bottom'])
-    else:
-        yolo_context = zmq.Context()
-        yolo_socket = yolo_context.socket(zmq.SUB)
-        yolo_socket.setsockopt(zmq.SUBSCRIBE, b'')
-        yolo_socket.setsockopt(zmq.SNDHWM, 1)
-        yolo_socket.setsockopt(zmq.RCVHWM, 1)
-        yolo_socket.setsockopt(zmq.CONFLATE, 1)
-
-        if use_remote_computer:
-            yolo_address = 'tcp://' + yn.remote_computer_ip + ':' + str(yn.yolo_port)
-        else:
-            yolo_address = 'tcp://' + '127.0.0.1' + ':' + str(yn.yolo_port)
-
-        yolo_socket.connect(yolo_address)
-
-        regulate_socket_poll = RegulatePollTimeout(target_control_loop_rate_hz,
-                                                   seconds_of_timing_history,
-                                                   timeout_proportional_gain,
-                                                   debug_on=False)
     try:
+        
+        robot = rb.Robot()
+        robot.startup()
+        recenter_robot(robot)
+        controller = nvc.NormalizedVelocityControl(robot)
+        controller.reset_base_odometry()
+
+        if not use_yolo: 
+            marker_info = {}
+            with open('aruco_marker_info.yaml') as f:
+                marker_info = yaml.load(f, Loader=SafeLoader)
+
+            detect_ball_on = False
+            detect_aruco_toy_on = True
+            aruco_detector = ad.ArucoDetector(marker_info=marker_info, show_debug_images=True, use_apriltag_refinement=False, brighten_images=True)
+            aruco_to_fingertips = af.ArucoToFingertips(default_height_above_mounting_surface=af.suctioncup_height['cup_bottom'])
+        else:
+            yolo_context = zmq.Context()
+            yolo_socket = yolo_context.socket(zmq.SUB)
+            yolo_socket.setsockopt(zmq.SUBSCRIBE, b'')
+            yolo_socket.setsockopt(zmq.SNDHWM, 1)
+            yolo_socket.setsockopt(zmq.RCVHWM, 1)
+            yolo_socket.setsockopt(zmq.CONFLATE, 1)
+
+            if use_remote_computer:
+                yolo_address = 'tcp://' + yn.remote_computer_ip + ':' + str(yn.yolo_port)
+            else:
+                yolo_address = 'tcp://' + '127.0.0.1' + ':' + str(yn.yolo_port)
+
+            yolo_socket.connect(yolo_address)
+
+            regulate_socket_poll = RegulatePollTimeout(target_control_loop_rate_hz,
+                                                       seconds_of_timing_history,
+                                                       timeout_proportional_gain,
+                                                       debug_on=False)
+
         first_frame = True
 
         behavior = 'reach'
@@ -375,22 +379,6 @@ def main(use_yolo, use_remote_computer, exposure):
         # Assume that the gripper starts out fully opened
         distance_between_fingertips = distance_between_fully_open_fingertips
         prev_distance_between_fingertips = distance_between_fully_open_fingertips
-
-        robot = rb.Robot()
-        robot.startup()
-
-        pan = np.pi/2.0
-        tilt = -np.pi/2.0
-
-        robot.head.move_to('head_pan', pan)
-        robot.head.move_to('head_tilt', tilt)
-        robot.push_command()
-        time.sleep(1.0)
-
-        controller = nvc.NormalizedVelocityControl(robot)
-        v = 0.05
-
-        recenter_robot(controller)
 
         if not use_yolo:
             pipeline, profile = dh.start_d405(exposure)
