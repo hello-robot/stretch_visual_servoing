@@ -151,18 +151,6 @@ joint_state_center = {
 }
 
 ####################################
-## Gains for Achieving Initial Pose
-
-recenter_velocity_scale = {
-    'lift_up': 4.0,
-    'arm_out': 4.0,
-    'wrist_yaw_counterclockwise': 1.5,
-    'wrist_pitch_up': 1.5,
-    'wrist_roll_counterclockwise': 1.5,
-    'gripper_open': 0.5
-}
-
-####################################
 ## Allowed Range of Motion
 
 min_joint_state = {
