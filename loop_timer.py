@@ -24,24 +24,29 @@ class LoopTimer:
     def start_of_iteration(self):
         self.loop_current_iteration_start_time = time.time()
 
-    def pretty_print(self):
-        print()
-        print('--- LOOP TIMING ---')
-        print('number of iterations =', self.loop_iterations)
-        print('average period =', "{:.2f}".format(self.loop_average_duration * 1000.0),  'ms')
-        print('period standard deviation =', "{:.2f}".format(self.loop_duration_standard_deviation * 1000.0),  'ms')
-        print('min period =', "{:.2f}".format(self.loop_min_time * 1000.0),  'ms')
-        print('max period =', "{:.2f}".format(self.loop_max_time * 1000.0),  'ms')
-        print('min frequency =', "{:.2f}".format(1.0/self.loop_max_time),  'Hz')
-        print('max frequency =', "{:.2f}".format(1.0/self.loop_min_time),  'Hz')
-        small_std_dev_freq = 1.0/(self.loop_average_duration + self.loop_duration_standard_deviation)
-        high_std_dev_freq = 1.0/(self.loop_average_duration - self.loop_duration_standard_deviation)
-        print('one standard deviation frequencies =', "{:.2f} Hz, {:.2f} Hz".format(small_std_dev_freq, high_std_dev_freq))
-        print('average frequency over all time =', "{:.2f}".format(1.0/self.loop_average_duration),  'Hz')
-        recent_length = len(self.loop_recent_timing)
-        if recent_length > 0:
-            print('average frequency over last ' + str(recent_length) + ' iterations = {:.2f} Hz'.format(1.0/mean(self.loop_recent_timing)))
-        print('-----------------------------------------------')
+    def pretty_print(self, minimum=False):
+        if not minimum: 
+            print()
+            print('--- LOOP TIMING ---')
+            print('number of iterations =', self.loop_iterations)
+            print('average period =', "{:.2f}".format(self.loop_average_duration * 1000.0),  'ms')
+            print('period standard deviation =', "{:.2f}".format(self.loop_duration_standard_deviation * 1000.0),  'ms')
+            print('min period =', "{:.2f}".format(self.loop_min_time * 1000.0),  'ms')
+            print('max period =', "{:.2f}".format(self.loop_max_time * 1000.0),  'ms')
+            print('min frequency =', "{:.2f}".format(1.0/self.loop_max_time),  'Hz')
+            print('max frequency =', "{:.2f}".format(1.0/self.loop_min_time),  'Hz')
+            small_std_dev_freq = 1.0/(self.loop_average_duration + self.loop_duration_standard_deviation)
+            high_std_dev_freq = 1.0/(self.loop_average_duration - self.loop_duration_standard_deviation)
+            print('one standard deviation frequencies =', "{:.2f} Hz, {:.2f} Hz".format(small_std_dev_freq, high_std_dev_freq))
+            print('average frequency over all time =', "{:.2f}".format(1.0/self.loop_average_duration),  'Hz')
+            recent_length = len(self.loop_recent_timing)
+            if recent_length > 0:
+                print('average frequency over last ' + str(recent_length) + ' iterations = {:.2f} Hz'.format(1.0/mean(self.loop_recent_timing)))
+            print('-----------------------------------------------')
+        else:
+            recent_length = len(self.loop_recent_timing)
+            if recent_length > 0:
+                print('average frequency over last ' + str(recent_length) + ' iterations = {:.2f} Hz'.format(1.0/mean(self.loop_recent_timing)))
 
         
     def end_of_iteration(self):

@@ -360,7 +360,7 @@ def main(use_yolo, use_remote_computer, exposure):
 
         behavior = 'reach'
         prev_behavior = 'reach'
-        grasping_the_ball = False
+        grasping_the_target = False
         pre_reach = True
 
         # Assume that the gripper starts out fully opened
@@ -385,7 +385,6 @@ def main(use_yolo, use_remote_computer, exposure):
             fingertip_right_pos = None
             between_fingertips = None
             distance_between_fingertips = None
-
             
             if not use_yolo:
                 frames = pipeline.wait_for_frames()
@@ -428,27 +427,45 @@ def main(use_yolo, use_remote_computer, exposure):
                     
             else:
                 timeout_for_socket_poll_int = regulate_socket_poll.get_poll_timeout()
-                print('timeout_for_socket_poll_int =', timeout_for_socket_poll_int)
+                #print('timeout_for_socket_poll_int =', timeout_for_socket_poll_int)
                 poll_results = yolo_socket.poll(timeout=timeout_for_socket_poll_int,
                                                 flags=zmq.POLLIN)
                 if poll_results == zmq.POLLIN:
                     yolo_results = yolo_socket.recv_pyobj()
-                    print('yolo_results =', yolo_results)
+                    #print('yolo_results =', yolo_results)
                     fingertips = yolo_results.get('fingertips', None)
                     yolo = yolo_results.get('yolo')
                     if len(yolo) > 0: 
                         toy_target = yolo[0]['grasp_center_xyz']
                 regulate_socket_poll.run_after_polling()
 
+            print()
+
+            if use_yolo:
+                toy_name = 'Tennis Ball'
+            else:
+                toy_name = 'ArUco Cube'
+            if toy_target is None:
+                print(toy_name + ' Detection: FAILED')
+            else:
+                print(toy_name + ' Detection: SUCCEEDED')
+ 
             fingertip_left_pose = None
             fingertip_right_pose = None
             f = fingertips.get('left', None)
             if f is not None:
                 fingertip_left_pos = f['pos']
+                print('Left Finger ArUco Marker Detection: SUCCEEDED')
+            else:
+                print('Left Finger ArUco Marker Detection: FAILED')
+
             f = fingertips.get('right', None)
             if f is not None:
                 fingertip_right_pos = f['pos']
-
+                print('Right Finger ArUco Marker Detection: SUCCEEDED')
+            else:
+                print('Right Finger ArUco Marker Detection: FAILED')
+                
             if (fingertip_left_pos is not None) and (fingertip_right_pos is not None): 
                 between_fingertips = (fingertip_left_pos + fingertip_right_pos)/2.0
                 prev_distance_between_fingertips = distance_between_fingertips
@@ -465,10 +482,10 @@ def main(use_yolo, use_remote_computer, exposure):
             # convert base odometry angle to be in the range -pi to pi
             joint_state['base_odom_theta'] = hm.angle_diff_rad(joint_state['base_odom_theta'], 0.0)
 
-            print()
-            print('gripper_eff =', joint_state['gripper_eff'])
-            print('gripper_pos =', joint_state['gripper_pos'])
-            print('distance_between_fingertips =', distance_between_fingertips)
+            print('gripper effort = {:.2f}'.format(joint_state['gripper_eff']))
+
+            if distance_between_fingertips is not None: 
+                print('distance_between_fingertips = {:.2f} cm'.format(100.0 * distance_between_fingertips))
 
             if toy_target is not None:
                 frames_since_toy_detected = 0
@@ -479,30 +496,28 @@ def main(use_yolo, use_remote_computer, exposure):
                 frames_since_fingers_detected = 0
             else: 
                 frames_since_fingers_detected = frames_since_fingers_detected + 1
-
-            print('behavior =', behavior)
-            print('prev_behavior =', prev_behavior)
-            print('pre_reach =', pre_reach)
-            print('grasping_the_ball =', grasping_the_ball)
+            print('grasping_the_target =', grasping_the_target)
 
             if distance_between_fingertips is not None:
                 if distance_between_fingertips < lost_ball_fingertips_too_close:
-                    if grasping_the_ball: 
+                    if grasping_the_target: 
                         print('I LOST THE BALL!!!')
-                        grasping_the_ball = False
+                        grasping_the_target = False
 
             if (between_fingertips is not None) and (toy_target is not None):            
 
                 position_error = toy_target - between_fingertips
                 target_error = np.linalg.norm(position_error)
-                print('target_error =', target_error)
-
+                print('target_error = {:.2f} cm'.format(100.0 * target_error))
                 if target_error >  lost_ball_target_error_too_large:
-                    if grasping_the_ball: 
+                    if grasping_the_target: 
                         print('I LOST THE BALL!!!')
-                        grasping_the_ball = False
+                        grasping_the_target = False
 
-            if (behavior == 'celebrate') and (not grasping_the_ball):
+            print('behavior =', behavior)
+            print('pre_reach =', pre_reach)
+                        
+            if (behavior == 'celebrate') and (not grasping_the_target):
                 behavior = 'disappointed'
 
             if behavior == 'retract':
@@ -516,9 +531,9 @@ def main(use_yolo, use_remote_computer, exposure):
                     'arm_out' : -1.0
                     }
 
-                if (not grasping_the_ball) or (retract_state_count > max_retract_state_count) or (joint_state['arm_pos'] < (0.01 + min_joint_state['arm_pos'])): 
+                if (not grasping_the_target) or (retract_state_count > max_retract_state_count) or (joint_state['arm_pos'] < (0.01 + min_joint_state['arm_pos'])): 
                     cmd = zero_vel.copy()
-                    if grasping_the_ball: 
+                    if grasping_the_target: 
                         behavior = 'celebrate'
                     else:
                         behavior = 'disappointed'
@@ -565,10 +580,8 @@ def main(use_yolo, use_remote_computer, exposure):
                         waggle_direction = int(waggle_count / 4) % 2
 
                         if waggle_direction == 0:
-                            print('direction 1')
                             robot.end_of_arm.get_joint('wrist_yaw').move_by(0.05, v_des=3.0, a_des=10.0)
                         else:
-                            print('direction 2')
                             robot.end_of_arm.get_joint('wrist_yaw').move_by(-0.05, v_des=3.0, a_des=10.0)
                         waggle_count = waggle_count + 1
                     robot.push_command()
@@ -578,7 +591,7 @@ def main(use_yolo, use_remote_computer, exposure):
                     behavior = 'reach'
                     pre_reach = True
 
-                if not grasping_the_ball:
+                if not grasping_the_target:
                     cmd = zero_vel.copy()
                     behavior = 'disappointed'
 
@@ -616,7 +629,7 @@ def main(use_yolo, use_remote_computer, exposure):
                     if joint_state['gripper_pos'] >= (0.9 * max_joint_state['gripper_pos']):
                         gripper_ready = True
                         cmd['gripper_open'] = 0.0
-                    elif not grasping_the_ball:
+                    elif not grasping_the_target:
                         cmd['gripper_open'] = gripper_open_speed
 
                     cmd['wrist_pitch_up'] = 0.0
@@ -656,7 +669,7 @@ def main(use_yolo, use_remote_computer, exposure):
 
                     #base_rotational_velocity = np.dot(rotated_base, position_error) / (joint_state['arm_pos'] + max_gripper_length)
                     base_rotational_velocity = np.dot(rotated_base, position_error)
-                    print('base_rotational_velocity =', base_rotational_velocity)
+                    #print('base_rotational_velocity =', base_rotational_velocity)
                     if abs(base_rotational_velocity) < min_base_speed:
                         base_rotational_velocity = 0.0
 
@@ -679,12 +692,12 @@ def main(use_yolo, use_remote_computer, exposure):
                     if target_error < grasp_if_error_below_this:
                         cmd['gripper_open'] = -gripper_close_speed
 
-                        if ((not grasping_the_ball) and
+                        if ((not grasping_the_target) and
                             (joint_state['gripper_eff'] < successful_grasp_effort) and
                             (distance_between_fingertips < successful_grasp_max_fingertip_distance) and
                             (distance_between_fingertips > successful_grasp_min_fingertip_distance)):
                             print('I GOT THE BALL!!!')
-                            grasping_the_ball = True
+                            grasping_the_target = True
                             behavior = 'retract'
                     else:
                         cmd['gripper_open'] = gripper_open_speed
@@ -750,7 +763,7 @@ def main(use_yolo, use_remote_computer, exposure):
 
             loop_timer.end_of_iteration()
             if print_timing: 
-                loop_timer.pretty_print()
+                loop_timer.pretty_print(minimum=True)
     finally:
         controller.stop()
         robot.stop()
