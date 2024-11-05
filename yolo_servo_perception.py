@@ -118,7 +118,7 @@ class YoloServoPerception():
 
 
                         # Find the estimated depth across the mask
-                        estimated_depth = np.mean(ball_depth_crop[mask_crop > 0])
+                        estimated_depth = np.percentile(ball_depth_crop[mask_crop > 0], 50)
                         estimated_z_m = estimated_depth * self.depth_scale
                     else: 
                         # Use the bounding box to estimate the
